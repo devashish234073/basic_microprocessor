@@ -133,6 +133,15 @@ function setHexValues(){
   Chex.value = makeNDigits(3,parseInt(C.value).toString(16).toUpperCase()+"H");
   Hhex.value = makeNDigits(3,parseInt(H.value).toString(16).toUpperCase()+"H");
   Lhex.value = makeNDigits(3,parseInt(L.value).toString(16).toUpperCase()+"H");
+  var memlabels = document.querySelectorAll(".memlabel");
+  var currMem = getCurrentMemAddress();
+  for(var ml=0;ml<memlabels.length;ml++){
+    if(memlabels[ml].innerText == currMem){
+      memlabels[ml].style.backgroundColor="cyan";
+    } else {
+      memlabels[ml].style.backgroundColor="khaki";
+    }
+  }
 }
 var memStore = {};
 function getMemStoreVal(addr){
@@ -142,6 +151,14 @@ function addToMemStore(addr,val) {
   memStore[addr] = val;
   let v = document.querySelector("#mem_"+addr);
   v.innerText = val;
+  v.style.backgroundColor="blue";
+  v.style.color="white";
+  v.style.fontSize="15px";
+  setTimeout(function(){
+    v.style.backgroundColor="white";
+    v.style.color="black";
+    v.style.fontSize="12px";
+  },2000);
 }
 var memVal = -1;
 function addMems(n) {
@@ -155,6 +172,7 @@ function addMems(n) {
       mmhxVal="0"+mmhxVal;
     }
     td1.innerText=mmhxVal+"H";
+    td1.setAttribute("class","memlabel");
     td1.style.backgroundColor="khaki";
     var td2 = document.createElement("td");
     td2.setAttribute("id","mem_"+mmhxVal+"H");
@@ -174,7 +192,7 @@ function createMem(pentons){
   memSize.innerText = (memVal+1) + " bytes";
 }
 
-createMem(10);
+createMem(15);
 
 //addToMemStore("0000H","05H");
 
@@ -283,6 +301,8 @@ function getRegHexVal(reg){
     return Lhex.value;
   } else if(reg=="M"){
     return getMemStoreVal(getCurrentMemAddress());
+  } else {
+    return "Need register name in second operand, invalid register value '"+reg+"'";
   }
 }
 function validate(cmd) {
@@ -290,32 +310,69 @@ function validate(cmd) {
   currOp2 = -1;
   var descStr = "";
   cmd = cmd.trim().toLowerCase();
+  var xtra = "";
   if(cmd.indexOf("mov")==0){
     var firstpart = "";
     if(cmd.indexOf("mov a,")==0){
       firstpart = "mvi a,";
       var tmpOp2 = cmd.replace("mov a,","");
-      cmd = firstpart+getRegHexVal(tmpOp2.toUpperCase());
+      xtra = " ("+tmpOp2.toUpperCase() + " register's)";
+      var hx = getRegHexVal(tmpOp2.toUpperCase());
+      if(hx.startsWith("Need register name")){
+        desc.innerText = hx;
+        return;
+      }
+      cmd = firstpart+hx;
     } else if(cmd.indexOf("mov b,")==0){
       firstpart = "mvi b,";
       var tmpOp2 = cmd.replace("mov b,","");
-      cmd = firstpart+getRegHexVal(tmpOp2.toUpperCase());
+      xtra = " ("+tmpOp2.toUpperCase() + " register's)";
+      var hx = getRegHexVal(tmpOp2.toUpperCase());
+      if(hx.startsWith("Need register name")){
+        desc.innerText = hx;
+        return;
+      }
+      cmd = firstpart+hx;
     } else if(cmd.indexOf("mov c,")==0){
       firstpart = "mvi c,";
       var tmpOp2 = cmd.replace("mov c,","");
-      cmd = firstpart+getRegHexVal(tmpOp2.toUpperCase());
+      xtra = " ("+tmpOp2.toUpperCase() + " register's)";
+      var hx = getRegHexVal(tmpOp2.toUpperCase());
+      if(hx.startsWith("Need register name")){
+        desc.innerText = hx;
+        return;
+      }
+      cmd = firstpart+hx;
     } else if(cmd.indexOf("mov h,")==0){
       firstpart = "mvi h,";
       var tmpOp2 = cmd.replace("mov h,","");
-      cmd = firstpart+getRegHexVal(tmpOp2.toUpperCase());
+      xtra = " ("+tmpOp2.toUpperCase() + " register's)";
+      var hx = getRegHexVal(tmpOp2.toUpperCase());
+      if(hx.startsWith("Need register name")){
+        desc.innerText = hx;
+        return;
+      }
+      cmd = firstpart+hx;
     } else if(cmd.indexOf("mov l,")==0){
       firstpart = "mvi l,";
       var tmpOp2 = cmd.replace("mov l,","");
-      cmd = firstpart+getRegHexVal(tmpOp2.toUpperCase());
+      xtra = " ("+tmpOp2.toUpperCase() + " register's)";
+      var hx = getRegHexVal(tmpOp2.toUpperCase());
+      if(hx.startsWith("Need register name")){
+        desc.innerText = hx;
+        return;
+      }
+      cmd = firstpart+hx;
     } else if(cmd.indexOf("mov m,")==0){
       firstpart = "mvi m,";
       var tmpOp2 = cmd.replace("mov m,","");
-      cmd = firstpart+getRegHexVal(tmpOp2.toUpperCase());
+      xtra = " ("+tmpOp2.toUpperCase() + " register's)";
+      var hx = getRegHexVal(tmpOp2.toUpperCase());
+      if(hx.startsWith("Need register name")){
+        desc.innerText = hx;
+        return;
+      }
+      cmd = firstpart+hx;
     }
   }
   
@@ -353,7 +410,7 @@ function validate(cmd) {
     descStr = "this command inreases value of register l by 1";
     currCode = 45;
   } else if(cmd=="inc m"){
-    descStr = "this command inreases value of memory location specified in M by 1";
+    descStr = "this command inreases value of memory location specified in M i.e. value in address "+getCurrentMemAddress()+" by 1";
     currCode = 46;
   } else if(cmd.indexOf("mvi a,")==0){
     var op2 = cmd.replace("mvi a,","").trim().toUpperCase();
@@ -362,7 +419,7 @@ function validate(cmd) {
       descStr = validHxMsg;
     } else {
       let intValMvi = parseInt(op2.replace("H",""),16);
-      descStr = "this command will set register A with value "+op2+" (decimal val: "+intValMvi+")";
+      descStr = "this command will set register A with"+xtra+" value "+op2+" (decimal val: "+intValMvi+")";
       currOp2 = intValMvi;
       currCode = 20;
     }
@@ -373,7 +430,7 @@ function validate(cmd) {
       descStr = validHxMsg;
     } else {
       let intValMvi = parseInt(op2.replace("H",""),16);
-      descStr = "this command will set register B with value "+op2+" (decimal val: "+intValMvi+")";
+      descStr = "this command will set register B with"+xtra+" value "+op2+" (decimal val: "+intValMvi+")";
       currOp2 = intValMvi;
       currCode = 21;
     }
@@ -384,7 +441,7 @@ function validate(cmd) {
       descStr = validHxMsg;
     } else {
       let intValMvi = parseInt(op2.replace("H",""),16);
-      descStr = "this command will set register C with value "+op2+" (decimal val: "+intValMvi+")";
+      descStr = "this command will set register C with"+xtra+" value "+op2+" (decimal val: "+intValMvi+")";
       currOp2 = intValMvi;
       currCode = 22;
     }
@@ -395,7 +452,7 @@ function validate(cmd) {
       descStr = validHxMsg;
     } else {
       let intValMvi = parseInt(op2.replace("H",""),16);
-      descStr = "this command will set register H with value "+op2+" (decimal val: "+intValMvi+")";
+      descStr = "this command will set register H with"+xtra+" value "+op2+" (decimal val: "+intValMvi+")";
       currOp2 = intValMvi;
       currCode = 23;
     }
@@ -406,7 +463,7 @@ function validate(cmd) {
       descStr = validHxMsg;
     } else {
       let intValMvi = parseInt(op2.replace("H",""),16);
-      descStr = "this command will set register L with value "+op2+" (decimal val: "+intValMvi+")";
+      descStr = "this command will set register L with"+xtra+" value "+op2+" (decimal val: "+intValMvi+")";
       currOp2 = intValMvi;
       currCode = 24;
     }
@@ -417,7 +474,7 @@ function validate(cmd) {
       descStr = validHxMsg;
     } else {
       let intValMvi = parseInt(op2.replace("H",""),16);
-      descStr = "this command will set memory location '"+getCurrentMemAddress()+"' with value "+op2+" (decimal val: "+intValMvi+")";
+      descStr = "this command will set memory location '"+getCurrentMemAddress()+"' with"+xtra+" value "+op2+" (decimal val: "+intValMvi+")";
       currOp2 = intValMvi;
       currCode = 25;
     }
