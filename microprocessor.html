@@ -127,6 +127,8 @@ var Ahex = document.querySelector("#Ahex");
 var Bhex = document.querySelector("#Bhex");
 var Chex = document.querySelector("#Chex");
 
+var lastMem = "";
+
 function setHexValues(){
   Ahex.value = makeNDigits(3,parseInt(A.value).toString(16).toUpperCase()+"H");
   Bhex.value = makeNDigits(3,parseInt(B.value).toString(16).toUpperCase()+"H");
@@ -135,12 +137,20 @@ function setHexValues(){
   Lhex.value = makeNDigits(3,parseInt(L.value).toString(16).toUpperCase()+"H");
   var memlabels = document.querySelectorAll(".memlabel");
   var currMem = getCurrentMemAddress();
-  for(var ml=0;ml<memlabels.length;ml++){
-    if(memlabels[ml].innerText == currMem){
-      memlabels[ml].style.backgroundColor="cyan";
-    } else {
-      memlabels[ml].style.backgroundColor="khaki";
+  var found = false;
+  if(lastMem!=currMem){
+    for(var ml=0;ml<memlabels.length;ml++){
+      if(memlabels[ml].innerText == currMem){
+        memlabels[ml].style.backgroundColor="cyan";
+        found = true;
+      } else {
+        memlabels[ml].style.backgroundColor="khaki";
+      }
     }
+    if(!found){
+      alert("memory address "+currMem+" not found");
+    }
+    lastMem=currMem;
   }
 }
 var memStore = {};
