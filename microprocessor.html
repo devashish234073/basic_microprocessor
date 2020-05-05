@@ -1,0 +1,370 @@
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+<style>
+.register{
+width:70px;
+text-align:center;
+}
+table{
+border-collapse:collapse;
+margin-bottom:30px;
+}
+li{
+font-size:12px;
+}
+td{
+border:1px solid black;
+}
+#desc{
+height:100px;
+width:210px;
+font-size:12px;
+color:blue;
+border-radius:10px;
+box-shadow:0px 0px 8px lightgreen;
+padding:5px;
+}
+#ov{
+  width:20px;
+  height:20px;
+  background-color:gray;
+  border-radius:10px;
+  color:white;
+  text-align:center;
+  font-size:14px;
+}
+.binVal{
+  padding:2px;
+  background-color:gray;
+  border-radius:10px;
+  color:white;
+  text-align:center;
+  margin-left:5px;
+  font-size:12px;
+}
+marquee{
+  background-color:khaki;
+  color:green;
+  font-size:12px;
+}
+#memHL td{
+  text-align:center;
+}
+table td,table input{
+font-size:10px;
+}
+</style>
+</head>
+<body>
+<marquee>Note: this app only supports ADD,INCA,INCB,INCC commands</marquee>
+<table>
+<tr>
+<td>Register A</td><td>Register B</td><td>Register C</td>
+<tr>
+<tr>
+<td><input type="text" class="register" id="A" readonly></td><td><input type="text" class="register" id="B" readonly></td><td><input type="text" class="register" id="C" readonly></td>
+<tr>
+<tr>
+<td><input type="text" class="register" id="Ahex" readonly></td><td><input type="text" class="register" id="Bhex" readonly></td><td><input type="text" class="register" id="Chex" readonly></td>
+<tr>
+<tr>
+<td>OV:</td><td colspan="2"><p id="ov">0</p></td>
+</tr>
+<tr>
+<td>A:</td><td colspan="2"><span class="binVal" id="a7">0</span><span class="binVal" id="a6">0</span><span class="binVal" id="a5">0</span><span class="binVal" id="a4">0</span><span class="binVal" id="a3">0</span><span class="binVal" id="a2">0</span><span class="binVal" id="a1">0</span><span class="binVal" id="a0">0</span></td>
+</tr>
+<tr>
+<td>B:</td><td colspan="2"><span class="binVal" id="b7">0</span><span class="binVal" id="b6">0</span><span class="binVal" id="b5">0</span><span class="binVal" id="b4">0</span><span class="binVal" id="b3">0</span><span class="binVal" id="b2">0</span><span class="binVal" id="b1">0</span><span class="binVal" id="b0">0</span></td>
+</tr>
+<tr>
+<td>C:</td><td colspan="2"><span class="binVal" id="c7">0</span><span class="binVal" id="c6">0</span><span class="binVal" id="c5">0</span><span class="binVal" id="c4">0</span><span class="binVal" id="c3">0</span><span class="binVal" id="c2">0</span><span class="binVal" id="c1">0</span><span class="binVal" id="c0">0</span></td>
+</tr>
+</table>
+
+<table id="memHL">
+<tr>
+<td colspan="2">M</td>
+</tr>
+<tr>
+<td>H</td><td>L</td>
+</tr>
+<tr>
+<td><input type="text" class="register" id="H" readonly></td><td><input type="text" class="register" id="L" readonly></td>
+</tr>
+<tr>
+<td><input type="text" class="register" id="Hhex" readonly></td><td><input type="text" class="register" id="Lhex" readonly></td>
+</tr>
+</table>
+
+<input type="text" id="cmnd" placeholder="write command here"><button onclick="run()">Run</button>
+<p id="desc"></p>
+
+<font size="2">Memory:<span id="memSize"></span></font>
+<table id="mem">
+</table>
+<ul>
+</ul>
+<script>
+var ov = document.querySelector("#ov");
+var A = document.querySelector("#A");
+var B = document.querySelector("#B");
+var C = document.querySelector("#C");
+A.value = 0;
+B.value = 0;
+C.value = 0;
+
+var H = document.querySelector("#H");
+var L = document.querySelector("#L");
+var Hhex = document.querySelector("#Hhex");
+var Lhex = document.querySelector("#Lhex");
+H.value = 0;
+L.value = 0;
+Hhex.value = "0H";
+Lhex.value = "0H";
+
+var Ahex = document.querySelector("#Ahex");
+var Bhex = document.querySelector("#Bhex");
+var Chex = document.querySelector("#Chex");
+
+function setHexValues(){
+  Ahex.value = parseInt(A.value).toString(16).toUpperCase()+"H";
+  Bhex.value = parseInt(B.value).toString(16).toUpperCase()+"H";
+  Chex.value = parseInt(C.value).toString(16).toUpperCase()+"H";
+}
+var memStore = {};
+function addToMemStore(addr,val) {
+  memStore[addr] = val;
+  let v = document.querySelector("#mem_"+addr);
+  v.innerText = val;
+}
+var memVal = -1;
+function addMems(n) {
+  var mem = document.querySelector("#mem");
+  var tr = document.createElement("tr");
+  for(var jk=0;jk<n;jk++){
+    memVal++;
+    var td1 = document.createElement("td");
+    var mmhxVal = memVal.toString(16).toUpperCase();
+    while(mmhxVal.length!=4){
+      mmhxVal="0"+mmhxVal;
+    }
+    td1.innerText=mmhxVal+"H";
+    td1.style.backgroundColor="khaki";
+    var td2 = document.createElement("td");
+    td2.setAttribute("id","mem_"+mmhxVal+"H");
+    td2.innerText = "00H";
+    memStore[mmhxVal+"H"]="00H";
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+  }
+  mem.appendChild(tr);
+}
+
+function createMem(pentons){
+  for(var im=0;im<pentons;im++){
+    addMems(5);
+  }
+  var memSize = document.querySelector("#memSize");
+  memSize.innerText = (memVal+1) + " bytes";
+}
+
+createMem(10);
+
+//addToMemStore("0000H","05H");
+
+function setBinValInner(reg,binVal){
+  for(var i=0;i<8;i++){
+    var elem  = document.querySelector("#"+reg+i);
+    elem.innerText=binVal[7-i];
+    if(binVal[7-i]==1){
+      elem.style.backgroundColor="green";
+      elem.style.color="white";
+    } else {
+      elem.style.backgroundColor="white";
+      elem.style.color="red";
+    }
+  }
+}
+
+function setBinVal(){
+  binValA = parseInt(A.value).toString(2);
+  binValB = parseInt(B.value).toString(2);
+  binValC = parseInt(C.value).toString(2);
+  while(binValA.length!=8){
+    binValA="0"+binValA;
+  }
+  while(binValB.length!=8){
+    binValB="0"+binValB;
+  }
+  while(binValC.length!=8){
+    binValC="0"+binValC;
+  }
+  setBinValInner("a",binValA);
+  setBinValInner("b",binValB);
+  setBinValInner("c",binValC);
+}
+setBinVal();
+setHexValues();
+
+var desc = document.querySelector("#desc");
+var ranCmnd = document.querySelector("ul");
+function addCommandHistory(cmnd){
+  var li = document.createElement("li");
+  li.innerText = cmnd;
+  ranCmnd.appendChild(li);
+}
+var cmnd = document.querySelector("#cmnd");
+cmnd.addEventListener("keyup",function(){
+  validate(cmnd.value);
+});
+
+var currCode = -1;
+var currOp2 = -1;
+function createAddDesc(prefix,op2){
+  op2 = op2.trim();
+  if(op2==""){
+    return "incomplete command";
+  }
+  if(op2=="a"){
+    currCode+=1;
+    return prefix+"that of register A, i.e. "+A.value;
+  } else if(op2=="b"){
+    currCode+=2;
+    return prefix+"that of register B, i.e. "+B.value;
+  } else if(op2=="c"){
+    currCode+=3;
+    return prefix+"that of register C, i.e. "+C.value;
+  } else {
+    if(op2.endsWith("h")){
+      var hexVal = op2.replace("h","").toUpperCase();
+      if(isNaN("0x"+hexVal)){
+          return hexVal+" is not a hexadecimal number";
+      }
+      var decVal = parseInt(hexVal,16);
+      currOp2  = decVal;
+      return prefix+" hex value "+hexVal+" whose decimal value is "+decVal;
+    } else {
+      return "invalid register/second operand '"+op2.toUpperCase()+"'";
+    }
+  }
+}
+function validate(cmd) {
+  currCode = -1;
+  currOp2 = -1;
+  var descStr = "";
+  cmd = cmd.trim().toLowerCase();
+  if(cmd.indexOf("add a,")==0){
+    var op2 = cmd.replace("add a,","").trim();
+    currCode = 10;
+    descStr = createAddDesc("this is an add command to add content of register A i.e."+A.value+" with ",op2);
+  } else if(cmd.indexOf("add b,")==0){
+    var op2 = cmd.replace("add b,","").trim();
+    currCode = 20;
+    descStr = createAddDesc("this is an add command to add content of register B i.e."+B.value+" with ",op2);
+  } else if(cmd.indexOf("add c,")==0){
+    var op2 = cmd.replace("add c,","").trim();
+    currCode = 30;
+    descStr = createAddDesc("this is an add command to add content of register C i.e."+C.value+" with ",op2);
+  } else if(cmd=="inca"){
+    descStr = "this command inreases value of register A by 1";
+    currCode = 41;
+  } else if(cmd=="incb"){
+    descStr = "this command inreases value of register B by 1";
+    currCode = 42;
+  } else if(cmd=="incc"){
+    descStr = "this command inreases value of register C by 1";
+    currCode = 43;
+  } else {
+    descStr = "incomplete/invalid command";
+  }
+  desc.innerText = descStr;
+}
+function checkOverFlow(val){
+  if(val>=0 &&val<256){
+    ov.style.backgroundColor="gray";
+    ov.innerText="0";
+    return val;
+  } else {
+    ov.style.backgroundColor="green";
+    ov.innerText="1";
+    return 0;
+  }
+}
+function run(){
+  if(currCode==-1){
+    alert("invalid command");
+    return;
+  }
+  var success = false;
+  if(currCode==10){
+    if(currOp2==-1){
+      alert("invalid second operand");
+      return;
+    } else {
+      A.value=checkOverFlow(parseInt(A.value)+currOp2);
+      success = true;
+    }
+  } else if(currCode==20){
+    if(currOp2==-1){
+      alert("invalid second operand");
+      return;
+    } else {
+      B.value=checkOverFlow(parseInt(B.value)+currOp2);
+      success = true;
+    }
+  } else if(currCode==30){
+    if(currOp2==-1){
+      alert("invalid second operand");
+      return;
+    } else {
+      C.value=checkOverFlow(parseInt(C.value)+currOp2);
+      success = true;
+    }
+  } else if(currCode==11){
+    A.value=checkOverFlow(parseInt(A.value)+parseInt(A.value));
+    success = true;
+  } else if(currCode==12){
+    A.value=checkOverFlow(parseInt(A.value)+parseInt(B.value));
+    success = true;
+  } else if(currCode==13){
+    A.value=checkOverFlow(parseInt(A.value)+parseInt(C.value));
+    success = true;
+  } else if(currCode==21){
+    B.value=checkOverFlow(parseInt(B.value)+parseInt(A.value));
+    success = true;
+  } else if(currCode==22){
+    B.value=checkOverFlow(parseInt(B.value)+parseInt(B.value));
+    success = true;
+  } else if(currCode==23){
+    B.value=checkOverFlow(parseInt(B.value)+parseInt(C.value));
+    success = true;
+  } else if(currCode==31){
+    C.value=checkOverFlow(parseInt(C.value)+parseInt(A.value));
+    success = true;
+  } else if(currCode==32){
+    C.value=checkOverFlow(parseInt(C.value)+parseInt(B.value));
+    success = true;
+  } else if(currCode==33){
+    C.value=checkOverFlow(parseInt(C.value)+parseInt(C.value));
+    success = true;
+  } else if(currCode==41){
+    A.value=checkOverFlow(parseInt(A.value)+1);
+    success = true;
+  } else if(currCode==42){
+    B.value=checkOverFlow(parseInt(B.value)+1);
+    success = true;
+  } else if(currCode==43){
+    C.value=checkOverFlow(parseInt(C.value)+1);
+    success = true;
+  }
+  if(success){
+    setHexValues();
+    setBinVal();
+    cmnd.value = cmnd.value.toUpperCase();
+    addCommandHistory(cmnd.value);
+  }
+}
+</script>
+</body>
+</html>
